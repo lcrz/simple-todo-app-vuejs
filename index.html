@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Simple ToDo app</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+  <div id="todo-app" class="grid place-items-center">
+    <div class="grid grid-cols-1 mt-4">
+      <h1 class="mb-2 mt-8 text-4xl tracking-tight text-gray-900 text-5xl">{{ header || 'Bienvenido' }}</h1>      
+    </div>
+    
+    <div class="grid grid-cols-1 w-96">
+        <input v-model="tarea" v-on:keyup.enter="agregar" type="text" placeholder="Escribe una tarea y presiona enter" class="my-4 bg-gray-80 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2">        
+    </div>
+    <div class="grid grid-cols-1 ">
+        <ul>
+            <transition-group name="list" tag="ul">
+                <li v-for="item in items" :key="item.id" class="group"> 
+                    <span :class="(item.completada) ? 'line-through' : ''">{{ item.label }}</span>
+                    <i class="fa-solid fa-check mx-4 opacity-0 group-hover:opacity-100" @click="completar(item)"></i> 
+                    <i class="fa-solid fa-trash-can mr-4 opacity-0 group-hover:opacity-100" @click="borrar(item.id)"></i>
+                </li>
+            </transition-group>
+        </ul>
+    </div>
+    
+  </div>
+
+  <!-- Script cdn vue -->
+  <script src="https://unpkg.com/vue@3"></script>
+
+  <!-- vue app -->
+  <script>
+    const ToDoApp = Vue.createApp({
+        data() {
+            return {
+            header: 'Tareas pendientes',
+            tarea:'',
+            items:[
+                {id: 1, label:'Comprar leche', completada: false},
+            ]
+            
+            }
+        },
+        mounted()  {
+            if (localStorage.getItem('tareas')) 
+            {
+                try {
+                    this.items = JSON.parse(localStorage.getItem('tareas'));
+                    this.ordenar();
+                } catch(e) {
+                    localStorage.removeItem('tareas');
+                }
+            }
+        },
+   
+        methods:
+        {
+            agregar()
+            {
+                if (this.tarea == '') {
+                    return;
+                }
+                this.items.push({'id':Date.now(),'label':this.tarea, 'completada':false});
+                this.tarea = '';
+                this.ordenar();
+                this.guardar();
+            },
+            ordenar()
+            {
+                this.items = this.items.sort((a, b) => {
+                    if (a.completada == false && b.completada == false) {
+                        return 0
+                    }
+
+                    if (a.completada == false) {
+                        return -1;
+                    }
+
+                    if (a.completada == true) {
+                        return 1;
+                    }
+                });
+            },
+            borrar(id)
+            {
+                this.items = this.items.filter(el => el.id !== id);
+                this.guardar();
+            },
+            completar(tarea)
+            {
+                tarea.completada = !tarea.completada;
+                this.ordenar();
+                this.guardar();
+            },
+            guardar() 
+            {
+                const parsed = JSON.stringify(this.items);
+                localStorage.setItem('tareas', parsed);
+            }
+        }
+    }).mount('#todo-app')
+  </script>
+</body>
+
+</html>
